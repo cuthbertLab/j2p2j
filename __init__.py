@@ -28,7 +28,15 @@ class Application(object):
         if os.path.isabs(self._htmlStart): 
             return self._htmlStart
         else:
-            return os.path.dirname(sys.argv[0]) + os.sep + self._htmlStart
+            argStart = sys.argv[0]
+            if not os.path.isabs(argStart):
+                argStart = os.getcwd() + os.sep + argStart
+                if not os.path.isdir(argStart):
+                    argStart = os.path.dirname(argStart)
+            else:
+                if argStart.endswith('.py') or argStart.endswith('.pyc'):
+                    argStart = os.path.dirname(argStart)                    
+            return argStart + os.sep + self._htmlStart
         
     def _setHTMLStart(self, htmlStart):
         self._htmlStart = htmlStart
