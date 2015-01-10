@@ -1,0 +1,42 @@
+<html>
+<!DOCTYPE HTML>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>J2P2J Application</title>
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="/static/components/j2p2j.js" type="text/javascript" charset="utf-8"></script>
+    <script src="/static/components/require/require.js" type="text/javascript" charset="utf-8"></script>
+    <script>
+      require.config({
+          baseUrl: '/static/',
+          paths: {
+            jquery : '/static/components/jquery/jquery-2.1.1.min',
+          },
+      });
+    </script>
+</head>
+<body>
+<noscript>
+    <div id='noscript'>
+      This application requires JavaScript.<br>
+      Please enable it to proceed.
+  </div>
+</noscript>
+<!--  User Code -->
+<script>
+require(['jquery'], function() {
+   j2p2j.connect(); 
+   $inc = $("#increment");
+   $inc.on('click', function() { j2p2j.send('increment', function(i) { $inc.html(i) } ) } );
+   $('.n').on('change', function() { 
+       j2p2j.send('multiply', function(i) { 
+            $inc.html(i.answer) 
+           }, [parseInt($("#anum").val()), parseInt($("#bnum").val())]);   
+   });
+});
+</script>
+Hello! <button id='increment'>1</button> <input type='text' class='n' id='anum' value="20"> <input type='text' class='n' id='bnum' value="7">
+</body>
+</html>

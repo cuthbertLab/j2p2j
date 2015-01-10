@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html>
+    <head>
+    <meta charset="utf-8">
+    <script type="text/javascript">
+        function WebSocketTest() {
+            var messageContainer = document.getElementById("messages");
+            var WSClass;
+            if (typeof(WebSocket) !== 'undefined') {
+                WSClass = WebSocket;
+            } else if (typeof(MozWebSocket) !== 'undefined') {
+                WSClass = MozWebSocket;
+            } else {
+                alert('Your browser does not have WebSocket support, please try Chrome, Safari or Firefox ≥ 6. Firefox 4 and 5 are also supported by you have to enable WebSockets in about:config.');
+            }
+            
+            var ws = new WSClass("ws://localhost:8888/ws?Id=123456789");
+            ws.onopen = function() {
+                ws.send("Message to send");
+            };
+            ws.onmessage = function (evt) { 
+                var received_msg = evt.data;
+                messageContainer.innerHTML = "Message is received..." + received_msg;
+            };
+            ws.onclose = function() { 
+                messageContainer.innerHTML = "Connection is closed...";
+            };
+        }
+        </script>
+    </head>
+    <body>
+        <a href="javascript:WebSocketTest()">Run WebSocket</a>
+        <div id="messages" style="height:200px;background:black;color:white;"></div>
+    </body>
+</html>
