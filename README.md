@@ -20,9 +20,9 @@ Create a UI in an index.html file.
 
 Call your application with: 
 
-::
     a = MyApplication('index.html', MyClientClass)
-    a.start()
+    a.run()
     
+Tada!
 
 

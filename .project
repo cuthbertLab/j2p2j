@@ -3,6 +3,7 @@
 	<name>j2p2j</name>
 	<comment></comment>
 	<projects>
+		<project>music21base</project>
 	</projects>
 	<buildSpec>
 		<buildCommand>

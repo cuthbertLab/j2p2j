@@ -1,4 +1,4 @@
-(function() {
+define([], function() {
     j2p2j = {websocket: null}
     //j2p2j.port = (window.location.port != "") ? ":" + window.location.port : "";
     j2p2j.websocketHost = 'ws://' + window.location.host; // + j2p2j.port;
@@ -82,4 +82,4 @@
     }
 
     return j2p2j;
-})();
+});
