@@ -23,6 +23,6 @@ Call your application with:
     a = MyApplication('index.html', MyClientClass)
     a.run()
     
-Tada!
+Tada!  See the demos directory for two demos...
 
 
