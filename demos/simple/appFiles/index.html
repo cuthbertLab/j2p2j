@@ -1,29 +1,11 @@
-<html>
 <!DOCTYPE HTML>
 <html>
 <head>
     <meta charset="utf-8">
-    <title>J2P2J Application</title>
-    <meta http-equiv="X-UA-Compatible" content="chrome=1">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <script src="/static/components/require/require.js" data-main='/static/components/j2p2j' type="text/javascript" charset="utf-8"></script>
-    <script>
-      require.config({
-          baseUrl: '/static/components/',
-          paths: {
-            jquery : '/static/components/jquery/jquery-2.1.1.min',
-          },
-      });
-    </script>
+    <title>Simple Application</title>
+    {% raw j2p2jHead %}
 </head>
 <body>
-<noscript>
-    <div id='noscript'>
-      This application requires JavaScript.<br>
-      Please enable it to proceed.
-  </div>
-</noscript>
-<!--  User Code -->
 <script>
 require(['jquery', 'j2p2j'], function() {
    j2p2j.connect(); 

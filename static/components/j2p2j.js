@@ -35,7 +35,69 @@ define([], function() {
             }            
         }
     };
-    j2p2j.send = function(method, callback, args, kwargs, error) {
+    /**
+     * Send takes a very flexible list of up to three arguments which can be
+     * objects, strings, functions or arrays.  A typical usage would be
+     * 
+     * j2p2j.send('methodName', [arg0, arg1], {keywordArg: value}, {callback: callbackFunction, error: errorFunction})
+     * 
+     * but might be
+     * 
+     * j2p2j.send({method: 'methodName', callback: function (d) {}, arg: 5})
+     * 
+     * etc.
+     */
+    j2p2j.send = function(arg0, arg1, arg2, arg3) {
+        var method;
+        var singleArg;
+        var args;
+        var kwargs;
+        var callback;
+        var error;
+        var callArgs = [arg0, arg1, arg2, arg3];
+        for (var i = 0; i < callArgs.length; i++) {
+            var a = callArgs[i];
+            if (typeof a == 'string' && method === undefined) {
+                method = a;
+            } else if (typeof a == 'object' && a !== null && a.constructor !== Array &&
+                        (a.callback === undefined && a.error === undefined &&
+                         a.args === undefined && a.arg === undefined && a.kwargs === undefined)) {
+                kwargs = a;
+            } else if (a !== undefined && a !== null && a.constructor === Array) {
+                args = a;
+            } else if (typeof a == 'function' && callback === undefined) {
+                callback = a;
+            } else if (typeof a == 'function' && error === undefined) {
+                error = a;
+            } else if (typeof a == 'object' && a !== null) {
+                if (a.method !== undefined && method === undefined) {
+                    method = a.method;
+                }
+                if (a.arg !== undefined && singleArg === undefined) {
+                    singleArg = a.arg;
+                }
+                if (a.args !== undefined && args === undefined) {
+                    args = a.args;
+                }
+                if (a.kwargs !== undefined && kwargs === undefined) {
+                    kwargs = a.kwargs;
+                }
+                if (a.callback !== undefined && callback === undefined) {
+                    callback = a.callback;
+                }
+                if (a.error !== undefined && error === undefined) {
+                    error = a.error;
+                }
+            }
+        }
+        if (args === undefined && singleArg !== undefined) {
+            args = [singleArg];
+        }
+        console.log(method, callback, args, kwargs, error);
+        j2p2j.sendRaw(method, callback, args, kwargs, error);
+    };
+    
+    j2p2j.sendRaw = function(method, callback, args, kwargs, error) {
         var msgId = j2p2j.makeMessageId();
         j2p2j.messageIdCallbacks[msgId] = callback;
         j2p2j.messageIdErrorCallbacks[msgId] = error;

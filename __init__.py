@@ -10,6 +10,20 @@ import tornado.options
 import tornado.websocket
 
 class Application(object):
+    defaultJ2p2jHead = '''
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="/static/components/require/require.js" data-main='/static/components/j2p2j' type="text/javascript" charset="utf-8"></script>
+    <script>
+      require.config({
+          baseUrl: '/static/components/',
+          paths: {
+            jquery : '/static/components/jquery/jquery-2.1.1.min',
+          },
+      });
+    </script>
+    '''
+    
     def __init__(self, htmlStart="index.html", clientClass=None):
         self.htmlStart = htmlStart
         self.port = 8888
@@ -22,6 +36,9 @@ class Application(object):
             clientClass = Client
         self.clientClass = clientClass
         self._clientMethods = []
+        self.j2p2jHead = self.defaultJ2p2jHead
+        
+        self.debug = True
     ## properties ##
     
     def _getHTMLStart(self):
@@ -111,12 +128,13 @@ class Application(object):
         j2p2jDirName = self.j2p2jDirName
         staticPath = os.path.join(j2p2jDirName, self.staticName)
         tornadoHandlers = [
-            (r'/', IndexHandler, {'options': {'htmlStart': self.htmlStart}}),
-            (r'/ws', MyWebSocketHandler, {'options': {'application': self}}),
+            (r'/', IndexHandler, {'options': {'htmlStart': self.htmlStart, 'j2p2j': self}}),
+            (r'/ws', MyWebSocketHandler, {'options': {'j2p2j': self}}),
             (r'/static/(.*)', IndexAwareStaticFileHandler, {'path': staticPath})
         ]
         self.tornadoHandlers = tornadoHandlers
         return tornadoHandlers
+    
     
     def runOld(self):
         '''
@@ -150,30 +168,32 @@ class IndexHandler(tornado.web.RequestHandler):
             self.htmlStart = options['htmlStart']
         else:
             self.htmlStart = 'index.html'  
+        if (options is not None and 'j2p2j' in options):
+            self.j2p2j = options['j2p2j']
         
     @tornado.web.asynchronous
     def get(self, **kwargs):
         #self.write("This is your response")
         #if "Id" in kwargs.keys():
         #    print("Your client id is: %s" % (kwargs["Id"],))
-        self.render(self.htmlStart)
+        self.render(self.htmlStart, j2p2jHead=self.j2p2j.j2p2jHead)
         #self.finish()
 
 
 class MyWebSocketHandler(tornado.websocket.WebSocketHandler):
     def initialize(self, options=None):
         self.options = options
-        if (options is not None and 'application' in options):
-            self.application = options['application']
-            self._check_origin = self.application.checkOrigin
+        if (options is not None and 'j2p2j' in options):
+            self.j2p2j = options['j2p2j']
+            self._check_origin = self.j2p2j.checkOrigin
                
     def open(self, *args):
         self.id = self.get_argument("clientId")
         self.stream.set_nodelay(True)
 
-        c = self.application.createClient(self.id)
+        c = self.j2p2j.createClient(self.id)
         self.client = c
-        self.application.clients[self.id] = c
+        self.j2p2j.clients[self.id] = c
  
     def on_message(self, message):
         messageObj = json.loads(message)
@@ -186,7 +206,7 @@ class MyWebSocketHandler(tornado.websocket.WebSocketHandler):
         method = None
         if ('method' in messageObj):
             method = messageObj['method']
-            if method not in self.application.clientMethods:
+            if method not in self.j2p2j.clientMethods:
                 method = None
         
         if method is None:
@@ -216,15 +236,16 @@ class MyWebSocketHandler(tornado.websocket.WebSocketHandler):
                 responseBundle['error'] = repr(e)
         
         responseJson = json.dumps(responseBundle)
-        print("Client %s received a message: %r, so I sent a reply: %r" % (self.id, message, responseJson))
+        if self.j2p2j.debug:
+            print("Client %s received a message: %r, so I sent a reply: %r" % (self.id, message, responseJson))
         self.write_message(responseJson)
  
     def on_close(self):
         self.client.application = None
-        if self.id in self.application.clients:
-            del self.application.clients[self.id]
+        if self.id in self.j2p2j.clients:
+            del self.j2p2j.clients[self.id]
         del self.client
-        del self.application
+        del self.j2p2j
         
     def check_origin(self, origin):
         if (callable(self._check_origin)):
@@ -241,7 +262,3 @@ class IndexAwareStaticFileHandler(tornado.web.StaticFileHandler):
         return super(IndexAwareStaticFileHandler, self).parse_url_path(url_path)
     
     
-    
-if __name__ == '__main__':
-    a = Application('static/blankTornado.html')
-    a.run()
