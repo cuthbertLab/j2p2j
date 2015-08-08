@@ -45,6 +45,9 @@ require(['jquery', 'j2p2j', 'music21'], function() {
         var mym = jpc.run(d);
         mym.appendNewCanvas('#m21main');        
     }
+    $('#inc').on('click', function () {
+        j2p2j.send('increment');
+    })
     $inc = $("#getMeasure");
     $inc.on('click', function() { 
             var args = {m: parseInt($("#mnum").val()), 
@@ -56,7 +59,7 @@ require(['jquery', 'j2p2j', 'music21'], function() {
 <h1>Test of Music21 and Music21j communication...</h1>
 <div id='m21output'></div>
 Bwv 66.6 <button id='getMeasure'>MEASURE</button> <br>
-Measure Number (0-10) <input type='text' class='n' id='mnum' value="3"> <br>
+Measure Number (0-10) <input type='text' class='n' id='mnum' value="3"> <button id='inc'>+</button><br>
 Part (0-3) <input type='text' class='n' id='pnum' value="0"><br>
 <div id='m21main'></div>
 

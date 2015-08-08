@@ -231,6 +231,11 @@ class MyWebSocketHandler(tornado.websocket.WebSocketHandler):
                     response = boundMethod(**kwargs)
                 else:
                     response = boundMethod()
+                    
+                ## methods can return their own callbacks...
+                if isinstance(response, dict) and 'callback' in response:
+                    responseBundle['callback'] = response['callback']
+                    del response['callback']
                 responseBundle['response'] = response
             except Exception as e:
                 responseBundle['error'] = repr(e)

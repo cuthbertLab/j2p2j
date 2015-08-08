@@ -17,6 +17,10 @@ define([], function() {
         var callback = j2p2j.messageIdCallbacks[messageId];
         var errorCallback = j2p2j.messageIdErrorCallbacks[messageId];
         
+        if (callback === undefined && data.callback !== undefined) {
+            callback = eval("(" + data.callback + ")");
+        }
+        
         delete j2p2j.messageIdCallbacks[messageId];
         delete j2p2j.messageIdErrorCallbacks[messageId];
 
@@ -93,7 +97,7 @@ define([], function() {
         if (args === undefined && singleArg !== undefined) {
             args = [singleArg];
         }
-        console.log(method, callback, args, kwargs, error);
+        //console.log(method, callback, args, kwargs, error);
         j2p2j.sendRaw(method, callback, args, kwargs, error);
     };
     

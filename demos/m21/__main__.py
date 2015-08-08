@@ -28,11 +28,10 @@ class MyClient(j2p2j.Client):
         return sf2.writeStr(fmt="jsonpickle")
       
     def increment(self):
-        self.counter += 1
-        return self.counter
+        self.counter += 1;
+        callback = 'function (d) { var n = $("#mnum"); n.val(d.counter) }'
+        return {'callback': callback, 'counter': self.counter}
 
-    def multiply(self, first=1, second=1):
-        return {'answer': first*second}
 
 if __name__ == '__main__':
     a = MyApp('appFiles/index.html', MyClient)
