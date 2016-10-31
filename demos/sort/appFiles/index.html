@@ -1,0 +1,35 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Simple Application</title>
+    {% raw j2p2jHead %}
+</head>
+<body>
+<script>
+require(['jquery', 'j2p2j'], function() {
+   j2p2j.connect();
+    $inc = $("#add_new_box");
+   $inc.on('click', () => {
+    $(".boxes").append("<br><input type='number' class='n' value='0'>")
+   });
+   $(".boxes").on('change', '.n', () => {
+      var args = [];
+      $(".n").each( (i,el) => {
+        args.push(parseInt($(el).val()));
+      });
+       j2p2j.send('sort', (i) => { 
+            $("#answer").html(i.answer.toString()) 
+           }, [args]
+        );   
+   });
+});
+</script>
+<span id="answer">7,20</span>
+<div class="boxes">
+  <input type='number' class='n' id='anum' value="20"><br>
+  <input type='number' class='n' id='bnum' value="7">
+</div>
+<button id='add_new_box'>Add New Box</button>
+</body>
+</html>

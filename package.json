@@ -1,0 +1,19 @@
+{
+  "name": "j2p2j",
+  "version": "1.0.0",
+  "description": "Websocket Javascript/Python framework",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/cuthbertLab/j2p2j.git"
+  },
+  "author": "Jimmy Gomez",
+  "license": "BSD",
+  "bugs": {
+    "url": "https://github.com/cuthbertLab/j2p2j/issues"
+  },
+  "homepage": "https://github.com/cuthbertLab/j2p2j#readme"
+}
