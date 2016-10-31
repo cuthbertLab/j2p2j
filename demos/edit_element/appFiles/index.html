@@ -1,0 +1,24 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Simple Application</title>
+    {% raw j2p2jHead %}
+    <style type="text/css">
+	.red {
+		color: red;
+	}
+</style>
+</head>
+<body>
+<script>
+require(['jquery', 'j2p2j'], function() {
+	j2p2j.connect();
+});
+</script>
+<div id="toEdit">0</div>
+<button id='increment'>Increment</button>
+<button id='addClass'>Add Red Class</button>
+<button id='removeClass'>Remove Red Class</button>
+</body>
+</html>

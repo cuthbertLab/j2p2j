@@ -1,0 +1,20 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Simple Application</title>
+    {% raw j2p2jHead %}
+</head>
+<body>
+<script>
+require(['jquery', 'j2p2j'], function() {
+  //idea is that this all you need
+   j2p2j.connect();
+});
+</script>
+<div id="boxes">
+</div>
+<button id='add_new_box'>Add New Box</button>
+<button id='delete_last_box'>Delete Last Box</button>
+</body>
+</html>

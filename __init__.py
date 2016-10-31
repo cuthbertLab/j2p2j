@@ -8,6 +8,12 @@ import tornado.ioloop
 import tornado.web
 import tornado.options
 import tornado.websocket
+import tornado.queues
+
+import types
+import webbrowser
+
+from tornado import gen
 
 class Application(object):
     defaultJ2p2jHead = '''
@@ -119,9 +125,10 @@ class Application(object):
         #tornado.options.parse_command_line()
         tornadoApp.listen(tornado.options.options.port)
         iolooper = tornado.ioloop.IOLoop.instance()
-
         print("Tornado Started")
+        webbrowser.open("http://localhost:8888")
         iolooper.start()
+
     
     def setupHandlers(self):
         ## todo -- take from ApplicationClass...
@@ -158,7 +165,24 @@ class Application(object):
         
 ####
 class Client(object):
-    pass
+    def __init__(self):
+        self.message = ""
+        self.newMessage = False
+        self.millisecondsToWait = 1
+
+    @gen.coroutine
+    def get(self, to_send):
+        self.send_message(to_send)
+        #newMessage or client disconnected
+        while not self.newMessage:
+            yield gen.sleep(self.millisecondsToWait /  1000)
+        self.newMessage = False
+        return self.message
+
+    def get_response(self, json):
+        self.message = json
+        self.newMessage = True
+        return {}
     
 ####
 class IndexHandler(tornado.web.RequestHandler):
@@ -196,7 +220,19 @@ class MyWebSocketHandler(tornado.websocket.WebSocketHandler):
         self.j2p2j.clients[self.id] = c
  
     def on_message(self, message):
+        #here we can handle the message for calback, mostly handled alread here
         messageObj = json.loads(message)
+        print("Received: " + message);
+        if ('newMethod' in messageObj):
+            print(messageObj)
+            method = messageObj['newMethod']
+            self.client.send_message = self.send_message
+            boundMethod = getattr(self.client, method)
+            response = boundMethod()
+            if type(response) != tornado.concurrent.Future:
+                responseJson = json.dumps(response)
+                fut = self.send_message(response)
+            return
         if ('messageId' in messageObj):
             messageId = messageObj['messageId']
         else:
@@ -239,7 +275,7 @@ class MyWebSocketHandler(tornado.websocket.WebSocketHandler):
                 responseBundle['response'] = response
             except Exception as e:
                 responseBundle['error'] = repr(e)
-        
+
         responseJson = json.dumps(responseBundle)
         if self.j2p2j.debug:
             print("Client %s received a message: %r, so I sent a reply: %r" % (self.id, message, responseJson))
@@ -257,6 +293,12 @@ class MyWebSocketHandler(tornado.websocket.WebSocketHandler):
             return self._check_origin(origin)
         else:
             return self._check_origin
+
+    def send_message(self, message):
+        responseJson = json.dumps(message)
+        print("Sending: " + str(message))
+        self.write_message(responseJson)
+
     
 ## from Mike H  -- http://stackoverflow.com/questions/14385048/is-there-a-better-way-to-handle-index-html-with-tornado
 class IndexAwareStaticFileHandler(tornado.web.StaticFileHandler):

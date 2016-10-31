@@ -1,4 +1,4 @@
-define([], function() {
+define([], () => {
     j2p2j = {websocket: null}
     //j2p2j.port = (window.location.port != "") ? ":" + window.location.port : "";
     j2p2j.websocketHost = 'ws://' + window.location.host; // + j2p2j.port;
@@ -6,20 +6,65 @@ define([], function() {
     j2p2j.messageIdCallbacks = {};
     j2p2j.messageIdErrorCallbacks = {};
     
-    j2p2j.onopen = function () {};
+    j2p2j.onopen = function () {j2p2j.sendNew("register")};
     j2p2j.onclose = function () {};
     j2p2j.onmessage = function (evt) {
         var data = JSON.parse(evt.data);
+        console.log("Received: ", data);
+        if (data.method === "CREATE") {
+            var newElement = document.createElement(data.type);
+            for (attribute in data.attributes) {
+                newElement.setAttribute(attribute, data.attributes[attribute]);
+            }
+            document.querySelector(data.location).appendChild(newElement);
+            return
+        }
+        if (data.method === "UPDATE") {
+            var element = document.querySelector(data.location)
+            if (data.toChange === "html") {
+                element.innerHTML = data.edit
+            } else if (data.toChange === "attributes"){
+                for (attribute in data.edit) {
+                    if(!element.getAttribute(attribute) || data.edit[attribute] === "") {
+                        element.setAttribute(attribute, data.edit[attribute]);
+                    } else {
+                        element[attribute] = data.edit[attribute];
+                    }
+                }
+            }
+            return
+        }
+        if (data.method === "DELETE") {
+            var element = document.querySelector(data.location)
+            element.parentNode.removeChild(element);
+            return
+        }
+        if (data.method === "REGISTER") {
+            data.events.forEach((event) => {
+                var element = document.querySelector(event.element)
+                element.addEventListener(event.event, () => {j2p2j.sendNew(event.method)});
+            });
+            return
+        }
+        if (data.method === "READ") {
+            console.log("GET method used");
+            var element = document.querySelector(data.location)
+            if (data.toGet === "html") {
+                console.log("Telling python to handle response")
+                j2p2j.send("get_response", [element.innerHTML])
+            } else if (data.toGet === "attribute") {
+                console.log("Getting Attributes");
+                console.log(data.get);
+                j2p2j.send("get_response", [element[data.get]])
+            }
+            return
+        }
         var response = data.response;
         var errorResponse = data.error;
         
         var messageId = data.messageId;
         var callback = j2p2j.messageIdCallbacks[messageId];
         var errorCallback = j2p2j.messageIdErrorCallbacks[messageId];
-        
-        if (callback === undefined && data.callback !== undefined) {
-            callback = eval("(" + data.callback + ")");
-        }
         
         delete j2p2j.messageIdCallbacks[messageId];
         delete j2p2j.messageIdErrorCallbacks[messageId];
@@ -38,6 +83,8 @@ define([], function() {
                 console.log('message received:', response);   
             }            
         }
+
+        //can add the GET, PUT, POST DELETE idea here once we see what the request is
     };
     /**
      * Send takes a very flexible list of up to three arguments which can be
@@ -113,7 +160,14 @@ define([], function() {
         if (kwargs !== undefined) {
             msg.kwargs = kwargs;
         }
-        var jsonMsg = JSON.stringify(msg);        
+        var jsonMsg = JSON.stringify(msg);
+        console.log("Sending Raw: ", jsonMsg);     
+        j2p2j.websocket.send(jsonMsg);
+    }
+    j2p2j.sendNew = function(method) {
+        var msg = {newMethod:method}
+        var jsonMsg = JSON.stringify(msg);
+        console.log("Sending New: ", jsonMsg);
         j2p2j.websocket.send(jsonMsg);
     }
     j2p2j.makeMessageId = function () {
@@ -146,6 +200,18 @@ define([], function() {
         }
         j2p2j.websocket = ws;
     }
+
+
+    // var get =  function(elementID, request, attribute) {
+    //     var element = $(elementID)
+    //     if (request === "html") {
+    //          return element.html();
+    //     } else if (request === "attribute") {
+    //         return element.attr(attribute);
+    //     }
+    // }
+
+
 
     return j2p2j;
 });
