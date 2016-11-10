@@ -6,7 +6,7 @@ define([], () => {
     j2p2j.messageIdCallbacks = {};
     j2p2j.messageIdErrorCallbacks = {};
     
-    j2p2j.onopen = function () {j2p2j.sendNew("register")};
+    j2p2j.onopen = function () {j2p2j.sendNew("register", None)};
     j2p2j.onclose = function () {};
     j2p2j.onmessage = function (evt) {
         var data = JSON.parse(evt.data);
@@ -42,7 +42,7 @@ define([], () => {
         if (data.method === "REGISTER") {
             data.events.forEach((event) => {
                 var element = document.querySelector(event.element)
-                element.addEventListener(event.event, () => {j2p2j.sendNew(event.method)});
+                element.addEventListener(event.event, () => {j2p2j.sendNew(event.method, event.element)});
             });
             return
         }
@@ -164,8 +164,8 @@ define([], () => {
         console.log("Sending Raw: ", jsonMsg);     
         j2p2j.websocket.send(jsonMsg);
     }
-    j2p2j.sendNew = function(method) {
-        var msg = {newMethod:method}
+    j2p2j.sendNew = function(method, originElement) {
+        var msg = {newMethod:method, originElement: originElement}
         var jsonMsg = JSON.stringify(msg);
         console.log("Sending New: ", jsonMsg);
         j2p2j.websocket.send(jsonMsg);

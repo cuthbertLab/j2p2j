@@ -23,7 +23,7 @@ class MyClient(j2p2j.Client):
         send["toGet"] = "attribute"
         send["get"] = "value"
         m = yield self.get(send)
-        self.incrementValue =  int(m)
+        self.incrementValue = int(m)
         print(self.incrementValue)
         after = {"method": "UPDATE"}
         after["location"] = "#toIncrement"

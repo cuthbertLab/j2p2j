@@ -29,6 +29,7 @@ class MyClient(j2p2j.Client):
         self.send_message(after)
         return {}
 
+    
     def register(self):
         registerEvents = {
             "method":"REGISTER",

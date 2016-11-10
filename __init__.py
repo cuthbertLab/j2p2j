@@ -3,15 +3,15 @@ import inspect
 import os
 import sys
 import json
+import types
+import webbrowser
+import copy
 
 import tornado.ioloop
 import tornado.web
 import tornado.options
 import tornado.websocket
 import tornado.queues
-
-import types
-import webbrowser
 
 from tornado import gen
 
@@ -165,10 +165,20 @@ class Application(object):
         
 ####
 class Client(object):
+
+    class_events = []
+
     def __init__(self):
         self.message = ""
         self.newMessage = False
         self.millisecondsToWait = 1
+        self.events = copy.deepcopy(self.class_events)
+
+    def register(self):
+        return {
+            "method": "REGISTER",
+            "events": self.events
+        }
 
     @gen.coroutine
     def get(self, to_send):
@@ -183,7 +193,39 @@ class Client(object):
         self.message = json
         self.newMessage = True
         return {}
-    
+
+    @gen.coroutine
+    def process_command(self, send_routine, command, originElement):
+        print("Processing")
+        print(command)
+        if command == "register":
+            print("register acitvated")
+            send_routine(self.register())
+        elif command.startswith("_"):
+            return
+
+        #handle
+        bound_command_read = getattr(self, command + '_read', None)
+        bound_command = getattr(self, command, None)
+        bound_command_update = getattr(self, command + '_update', None)
+
+        if bound_command_read is not None:
+            print("Read exists")
+            readMessage = bound_command_read()
+            print(readMessage)
+            readReply = yield self.get(readMessage)
+            print(readReply)
+        else:
+            readReply = None
+
+        response = bound_command(readReply, originElement)
+
+        if bound_command_update is not None:
+            print("update exists")
+            update_message = bound_command_update(response)
+            send_routine(update_message)
+
+        return {}
 ####
 class IndexHandler(tornado.web.RequestHandler):
     def initialize(self, options=None):
@@ -220,19 +262,26 @@ class MyWebSocketHandler(tornado.websocket.WebSocketHandler):
         self.j2p2j.clients[self.id] = c
  
     def on_message(self, message):
-        #here we can handle the message for calback, mostly handled alread here
+        if "send_message" not in dir(self.client):
+            self.client.send_message = self.send_message
         messageObj = json.loads(message)
         print("Received: " + message);
         if ('newMethod' in messageObj):
-            print(messageObj)
-            method = messageObj['newMethod']
-            self.client.send_message = self.send_message
-            boundMethod = getattr(self.client, method)
-            response = boundMethod()
-            if type(response) != tornado.concurrent.Future:
+            command = messageObj['newMethod']
+            if 'originElement' in messageObj:
+                element = messageObj['originElement']
+            else:
+                element = None
+            print("before process")
+            response = self.client.process_command(self.send_message, command, element)
+            print("after process")
+            if not isinstance(response, tornado.concurrent.Future):
                 responseJson = json.dumps(response)
                 fut = self.send_message(response)
             return
+
+        #here we can handle the message for calback, mostly handled alread here
+        messageObj = json.loads(message)
         if ('messageId' in messageObj):
             messageId = messageObj['messageId']
         else:
@@ -289,7 +338,7 @@ class MyWebSocketHandler(tornado.websocket.WebSocketHandler):
         del self.j2p2j
         
     def check_origin(self, origin):
-        if (callable(self._check_origin)):
+        if callable(self._check_origin):
             return self._check_origin(origin)
         else:
             return self._check_origin
