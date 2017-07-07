@@ -11,9 +11,7 @@ class MyApp(j2p2j.Application):
 class MyClient(j2p2j.Client):
 
     class_events = [
-        {"element":"#one", "event": "click", "method": "increment"},
-        {"element":"#ten", "event": "click", "method": "increment"},
-        {"element":"#twenty", "event": "click", "method": "increment"}
+        {"element":"#incrementButtons button", "event": "click", "method": "increment"},
     ]
 
     def __init__(self):

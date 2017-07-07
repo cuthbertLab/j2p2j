@@ -39,7 +39,19 @@ require(['jquery', 'j2p2j', 'music21'], function() {
     s.changedCallbackFunction = function () { sendStreamToPy(this) };
     s.appendNewCanvas();
 
-    
+    $('#inc').on('click', function () {
+        j2p2j.send('increment');
+    })
+    $inc = $("#getMeasure");
+    bachMeasure = function (d) {
+        var mym = jpc.run(d);
+        mym.appendNewCanvas('#m21main');        
+    }
+    $inc.on('click', function() { 
+            var args = {m: parseInt($("#mnum").val()), 
+                        p: parseInt($("#pnum").val())};
+            j2p2j.send('getMeasure', args, {callback: bachMeasure}); 
+        } );
     var jpc = new music21.jsonPickle.Converter(); 
     bachMeasure = function (d) {
         var mym = jpc.run(d);

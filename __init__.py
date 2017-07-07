@@ -15,7 +15,7 @@ import tornado.queues
 
 from tornado import gen
 
-class Application(object):
+class Application:
     defaultJ2p2jHead = '''
     <meta http-equiv="X-UA-Compatible" content="chrome=1">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -164,7 +164,7 @@ class Application(object):
             f.write(outputtedFileCode)
         
 ####
-class Client(object):
+class Client:
 
     class_events = []
 
@@ -189,7 +189,7 @@ class Client(object):
         self.newMessage = False
         return self.message
 
-    def get_response(self, json):
+    def get_response(self, *json):
         self.message = json
         self.newMessage = True
         return {}
@@ -201,7 +201,9 @@ class Client(object):
         if command == "register":
             print("register acitvated")
             send_routine(self.register())
+            return
         elif command.startswith("_"):
+            #add debug. exception?
             return
 
         #handle
@@ -218,7 +220,12 @@ class Client(object):
         else:
             readReply = None
 
-        response = bound_command(readReply, originElement)
+        response = bound_command()
+        if(type(response) is tornado.concurrent.Future):
+            res = yield response
+            send_routine(res)
+        else:
+            send_routine(response)
 
         if bound_command_update is not None:
             print("update exists")
@@ -226,7 +233,7 @@ class Client(object):
             send_routine(update_message)
 
         return {}
-####
+
 class IndexHandler(tornado.web.RequestHandler):
     def initialize(self, options=None):
         self.options = options
@@ -265,16 +272,15 @@ class MyWebSocketHandler(tornado.websocket.WebSocketHandler):
         if "send_message" not in dir(self.client):
             self.client.send_message = self.send_message
         messageObj = json.loads(message)
-        print("Received: " + message);
+        print("Received: " + message)
         if ('newMethod' in messageObj):
             command = messageObj['newMethod']
             if 'originElement' in messageObj:
                 element = messageObj['originElement']
             else:
                 element = None
-            print("before process")
+            #change process
             response = self.client.process_command(self.send_message, command, element)
-            print("after process")
             if not isinstance(response, tornado.concurrent.Future):
                 responseJson = json.dumps(response)
                 fut = self.send_message(response)
@@ -356,5 +362,3 @@ class IndexAwareStaticFileHandler(tornado.web.StaticFileHandler):
             url_path += 'index.html'
 
         return super(IndexAwareStaticFileHandler, self).parse_url_path(url_path)
-    
-    
