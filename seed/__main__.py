@@ -1,55 +1,56 @@
-import j2p2j
+from j2p2j import Client, Application
 from tornado import gen
     
-class MyApp(j2p2j.Application):
+class MyApp(Application):
     pass
 
-class MyClient(j2p2j.Client):
+class MyClient(Client):
     def __init__(self):
         super(MyClient, self).__init__()
         self.counter = 0
         self.boxes = []
+        self.events2Register = [
+            {"element":"#add_new_box", "event": "click","method":"addBox"},
+            {"element":"#delete_last_box", "event": "click","method":"delete_last_box"},
+            {"element":"#add_inputs", "event": "click","method":"addInputs"}
+        ]
+
+    @gen.coroutine
+    def addInputs(self):
+        result = yield self.DOM.read(".inputs", "attribute", "value")
+        addition = sum([int(x) for x in list(result)])
+        self.DOM.update("#total", "html", addition)
+
+    def addBox(self):
+        self.DOM.create("input", "#boxes", {"type":"number","value":"0", "class":"inputs"})
+
+    def delete_last_box(self):
+        self.DOM.delete("#boxes input:last-child")
+
+if __name__ == '__main__':
+    server = MyApp('templates/index.html', MyClient)
+    server.run()
+"""
+import j2p2j
+from tornado import gen
+    
+class MyApp(j2p2j.Application):
+    def __init__(self):
+        super(MyApp, self).__init__()
+        self.staticName = 'static'
+
+class MyClient(j2p2j.Client):
+    def __init__(self):
+        super(MyClient, self).__init__()
 
     def register(self):
         registerEvents = {
             "method":"REGISTER",
-            "events":[
-                {"element":"#add_new_box", "event": "click","method":"addBox"},
-                {"element":"#delete_last_box", "event": "click","method":"delete_last_box"},
-                {"element":"#add_inputs", "event": "click","method":"addInputs"}
-            ]
+            "events":[]
         }
         return registerEvents
 
-    @gen.coroutine
-    def addInputs(self):
-        print("Getting input value")
-        send = {"method": "READ"}
-        send["location"] = ".inputs"
-        send["toGet"] = "attribute"
-        send["get"] = "value"
-        result = yield self.get(send)
-        addition = sum([int(x) for x in list(result)])
-        send = {"method": "UPDATE"}
-        send["location"] = "#total"
-        send["toChange"] = "html"
-        send["edit"] = addition
-        print("Updating input")
-        return send
-
-    def addBox(self):
-        print("adding box")
-        send = {"method": "CREATE"}
-        send["type"] = "input"
-        send["location"] = "#boxes"
-        send["attributes"] = {"type":"number","value":"0", "class":"inputs"}
-        return send
-
-    def delete_last_box(self):
-        send = {"method": "DELETE"}
-        send["location"] = "#boxes input:last-child"
-        return send
-
 if __name__ == '__main__':
-    a = MyApp('templates/index.html', MyClient)
-    a.run()
+    server = MyApp('templates/index.html', MyClient)
+    server.run()
+"""
