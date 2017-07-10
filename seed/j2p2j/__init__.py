@@ -412,37 +412,3 @@ class DOM:
         self.message = json
         self.newMessage = True
         return {}
-
-'''
-class DOM:
-    def __init__(self, send_method):
-    
-    def create(self, tag, placement, attributes):
-
-    def update(self, element, toChange, edit):
-
-    def delete(self, element):
-
-    @gen.coroutine
-    def read(self, element, toGet, attribute=None):
-
-    def read_response(self, json):
-
-class ClientController:
-
-    def __init__(self):
-        self.reg = []
-        """create client python object"""
-
-    def register(self):
-        """ """
-
-    def get_response(self, *json):
-        """method updates async get method that data was obtained from DOM"""
-
-    @gen.coroutine
-    def process_command(self, send_routine, command, originElement):
-        """async method that uses method indicated in JSON message from client
-           websocket"""
-
-'''

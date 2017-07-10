@@ -420,6 +420,7 @@ class j2p2j extends WebSocket {
                 }
             }
         }
+        element.dispatchEvent(new Event('change'))
     }
     delete(location) {
         const element = document.querySelector(location)
