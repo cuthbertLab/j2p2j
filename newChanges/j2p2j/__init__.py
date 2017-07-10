@@ -262,7 +262,7 @@ class MyWebSocketHandler(tornado.websocket.WebSocketHandler):
         c.DOM = DOM(self.send_message)
         self.client = c
         self.j2p2j.clients[self.id] = c
- 
+ a
     def on_message(self, message):
         # if "send_message" not in dir(self.client):
         #     self.client.send_message = self.send_message
@@ -416,17 +416,23 @@ class DOM:
 '''
 class DOM:
     def __init__(self, send_method):
+        """sets message sending mechanism of Client WebSocket to instance for use in CRUD methods"""
     
     def create(self, tag, placement, attributes):
+        """creates a new DOM element"""
 
     def update(self, element, toChange, edit):
+        """updates a DOM element"""
 
     def delete(self, element):
+        """deletes a DOM element"""
 
     @gen.coroutine
     def read(self, element, toGet, attribute=None):
+        """reads one or more DOM elements asynchronously"""
 
     def read_response(self, json):
+        """helper function for read method to inform method that response was received and read method can successfully return"""
 
 class ClientController:
 

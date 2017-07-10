@@ -1,4 +1,4 @@
-define([], () => {
+/*define([], () => {
     j2p2j = { websocket: null }
     //j2p2j.port = (window.location.port != "") ? ":" + window.location.port : "";
     j2p2j.websocketHost = 'ws://' + window.location.host; // + j2p2j.port;
@@ -110,7 +110,7 @@ define([], () => {
      * j2p2j.send({method: 'methodName', callback: function (d) {}, arg: 5})
      * 
      * etc.
-     */
+     
     j2p2j.send = function (arg0, arg1, arg2, arg3) {
         var method;
         var singleArg;
@@ -227,9 +227,9 @@ define([], () => {
 
 
     return j2p2j;
-});
+});*/
 
-/*
+class j2p2j extends WebSocket {
     constructor() {
         // this.websocket = null;
         // this.websocketHost = 'ws://' + window.location.host; // + j2p2j.port;
@@ -418,11 +418,16 @@ define([], () => {
                 } else {
                     element[attribute] = changes[attribute];
                 }
+                
             }
         }
+        element.dispatchEvent(new Event('change'))
     }
     delete(location) {
         const element = document.querySelector(location)
         element.parentNode.removeChild(element);
     }
-}*/
+}
+window.onload = () => {
+    j2p2jInstance = new j2p2j();
+}
