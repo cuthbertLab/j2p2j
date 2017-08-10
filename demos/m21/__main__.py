@@ -28,7 +28,12 @@ class MyClient(j2p2j.Client):
         return sf2.writeStr(fmt="jsonpickle")
       
     def increment(self):
-        self.counter += 1;
+        self.counter += 1
+        # send = {"method": "UPDATE"}
+        # send["location"] = "#mnum"
+        # send["toChange"] = "attributes"
+        # send["edit"] = {"value":self.counter}
+        # return send
         callback = 'function (d) { var n = $("#mnum"); n.val(d.counter) }'
         return {'callback': callback, 'counter': self.counter}
 

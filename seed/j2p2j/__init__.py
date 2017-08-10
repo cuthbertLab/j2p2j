@@ -19,16 +19,9 @@ class Application:
     defaultJ2p2jHead = '''
     <meta http-equiv="X-UA-Compatible" content="chrome=1">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <script src="/static/components/require/require.js" data-main='/static/components/j2p2j' type="text/javascript" charset="utf-8"></script>
-    <script>
-      require.config({
-          baseUrl: '/static/components/',
-          paths: {
-            jquery : '/static/components/jquery/jquery-2.1.1.min',
-          },
-      });
-    </script>
+    <script src="/static/j2p2j.js"></script>
     '''
+    render_variables = {}
     
     def __init__(self, htmlStart="index.html", clientClass=None):
         self.htmlStart = htmlStart
@@ -43,6 +36,7 @@ class Application:
         self.clientClass = clientClass
         self._clientMethods = []
         self.j2p2jHead = self.defaultJ2p2jHead
+        self.render_variables['j2p2jHead'] = self.j2p2jHead
         
         self.debug = True
     ## properties ##
@@ -111,6 +105,7 @@ class Application:
         c = self.clientClass()
         c.id = clientId
         c.application = self
+        #c.DOM = DOM(c.application)
         return c
 
     ## Start Methods ##
@@ -133,10 +128,12 @@ class Application:
     def setupHandlers(self):
         ## todo -- take from ApplicationClass...
         j2p2jDirName = self.j2p2jDirName
-        staticPath = os.path.join(j2p2jDirName, self.staticName)
+        staticPath = os.path.join(j2p2jDirName, '..', self.staticName)
+        print(staticPath)
         tornadoHandlers = [
             (r'/', IndexHandler, {'options': {'htmlStart': self.htmlStart, 'j2p2j': self}}),
             (r'/ws', MyWebSocketHandler, {'options': {'j2p2j': self}}),
+            (r'/static/j2p2j.js', j2p2jScriptHandler),
             (r'/static/(.*)', IndexAwareStaticFileHandler, {'path': staticPath})
         ]
         self.tornadoHandlers = tornadoHandlers
@@ -173,34 +170,30 @@ class Client:
         self.newMessage = False
         self.millisecondsToWait = 1
         self.events = copy.deepcopy(self.class_events)
+        self.events2Register = []
 
     def register(self):
-        return {
+        self.DOM.send({
             "method": "REGISTER",
-            "events": self.events
-        }
-
-    @gen.coroutine
-    def get(self, to_send):
-        self.send_message(to_send)
-        #newMessage or client disconnected
-        while not self.newMessage:
-            yield gen.sleep(self.millisecondsToWait /  1000)
-        self.newMessage = False
-        return self.message
+            "events": self.events2Register
+        })
 
     def get_response(self, *json):
-        self.message = json
-        self.newMessage = True
-        return {}
+        self.DOM.read_response(json)
 
     @gen.coroutine
     def process_command(self, send_routine, command, originElement):
         print("Processing")
         print(command)
         if command == "register":
-            print("register acitvated")
-            send_routine(self.register())
+            # print("register acitvated")
+            # send_routine(self.register())
+            self.register()
+            return
+        elif command == "read_response":
+            # print("register acitvated")
+            # send_routine(self.register())
+            self.DOM.read_response()
             return
         elif command.startswith("_"):
             #add debug. exception?
@@ -220,12 +213,13 @@ class Client:
         else:
             readReply = None
 
-        response = bound_command()
-        if(type(response) is tornado.concurrent.Future):
-            res = yield response
-            send_routine(res)
-        else:
-            send_routine(response)
+        bound_command()
+        # response = bound_command()
+        # if(type(response) is tornado.concurrent.Future):
+        #     res = yield response
+        #     send_routine(res)
+        # else:
+        #     send_routine(response)
 
         if bound_command_update is not None:
             print("update exists")
@@ -249,7 +243,7 @@ class IndexHandler(tornado.web.RequestHandler):
         #self.write("This is your response")
         #if "Id" in kwargs.keys():
         #    print("Your client id is: %s" % (kwargs["Id"],))
-        self.render(self.htmlStart, j2p2jHead=self.j2p2j.j2p2jHead)
+        self.render(self.htmlStart, **self.j2p2j.render_variables)
         #self.finish()
 
 
@@ -265,12 +259,13 @@ class MyWebSocketHandler(tornado.websocket.WebSocketHandler):
         self.stream.set_nodelay(True)
 
         c = self.j2p2j.createClient(self.id)
+        c.DOM = DOM(self.send_message)
         self.client = c
         self.j2p2j.clients[self.id] = c
  
     def on_message(self, message):
-        if "send_message" not in dir(self.client):
-            self.client.send_message = self.send_message
+        # if "send_message" not in dir(self.client):
+        #     self.client.send_message = self.send_message
         messageObj = json.loads(message)
         print("Received: " + message)
         if ('newMethod' in messageObj):
@@ -281,9 +276,9 @@ class MyWebSocketHandler(tornado.websocket.WebSocketHandler):
                 element = None
             #change process
             response = self.client.process_command(self.send_message, command, element)
-            if not isinstance(response, tornado.concurrent.Future):
-                responseJson = json.dumps(response)
-                fut = self.send_message(response)
+            # if not isinstance(response, tornado.concurrent.Future):
+            #     responseJson = json.dumps(response)
+            #     fut = self.send_message(response)
             return
 
         #here we can handle the message for calback, mostly handled alread here
@@ -303,7 +298,7 @@ class MyWebSocketHandler(tornado.websocket.WebSocketHandler):
         if method is None:
             responseBundle['error'] = 'Unknown method.' # TODO: send error
             if ('method' in messageObj):
-                responseBundle['error'] += ': ' + messageObj['method'];
+                responseBundle['error'] += ': ' + messageObj['method']
         else:        
             args = None
             if ('args' in messageObj):
@@ -334,7 +329,7 @@ class MyWebSocketHandler(tornado.websocket.WebSocketHandler):
         responseJson = json.dumps(responseBundle)
         if self.j2p2j.debug:
             print("Client %s received a message: %r, so I sent a reply: %r" % (self.id, message, responseJson))
-        self.write_message(responseJson)
+        #self.write_message(responseJson)
  
     def on_close(self):
         self.client.application = None
@@ -362,3 +357,58 @@ class IndexAwareStaticFileHandler(tornado.web.StaticFileHandler):
             url_path += 'index.html'
 
         return super(IndexAwareStaticFileHandler, self).parse_url_path(url_path)
+
+class j2p2jScriptHandler(tornado.web.RequestHandler):
+    def get(self, **kwargs):
+        self.render("j2p2j.js")
+
+class DOM:
+    def __init__(self, send_method):
+        self.send = send_method
+        self.message = ""
+        self.newMessage = False
+        self.millisecondsToWait = 1
+    
+    def create(self, tag, placement, attributes):
+        json = {
+            "method": "CREATE",
+            "type": tag,
+            "location": placement,
+            "attributes": attributes
+        }
+        self.send(json)
+    def update(self, element, toChange, edit):
+        json = {
+            "method": "UPDATE",
+            "location": element,
+            "toChange": toChange,
+            "edit": edit
+        }
+        self.send(json)
+
+    def delete(self, element):
+        json = {
+            "method": "DELETE",
+            "location": element
+        }
+        self.send(json)
+
+    @gen.coroutine
+    def read(self, element, toGet, attribute=None):
+        json = {
+            "method": "READ",
+            "location": element,
+            "toGet": toGet,
+            "get": attribute
+        }
+        self.send(json)
+        #newMessage or client disconnected
+        while not self.newMessage:
+            yield gen.sleep(self.millisecondsToWait /  1000)
+        self.newMessage = False
+        return self.message
+
+    def read_response(self, json):
+        self.message = json
+        self.newMessage = True
+        return {}
