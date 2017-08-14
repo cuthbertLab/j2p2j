@@ -29,9 +29,11 @@ class Application:
       });
     </script>
     '''
-    
+
     def __init__(self, htmlStart="index.html", clientClass=None):
+        self._htmlStart = None
         self.htmlStart = htmlStart
+
         self.port = 8888
         self.staticName = 'static'
         self._dirName = ''
@@ -40,15 +42,18 @@ class Application:
         self.clients = {}
         if clientClass is None:
             clientClass = Client
+
         self.clientClass = clientClass
         self._clientMethods = []
+        self.tornadoHandlers = []
         self.j2p2jHead = self.defaultJ2p2jHead
-        
+
         self.debug = True
+
     ## properties ##
-    
+
     def _getHTMLStart(self):
-        if os.path.isabs(self._htmlStart): 
+        if os.path.isabs(self._htmlStart):
             return self._htmlStart
         else:
             argStart = sys.argv[0]
@@ -58,39 +63,39 @@ class Application:
                     argStart = os.path.dirname(argStart)
             else:
                 if argStart.endswith('.py') or argStart.endswith('.pyc'):
-                    argStart = os.path.dirname(argStart)                    
+                    argStart = os.path.dirname(argStart)
             return argStart + os.sep + self._htmlStart
-        
+
     def _setHTMLStart(self, htmlStart):
         self._htmlStart = htmlStart
-        
+
     htmlStart = property(_getHTMLStart, _setHTMLStart)
-    
+
     def _getDirName(self):
         if (self._dirName == ""):
             return os.path.dirname(inspect.getmodule(self.__class__).__file__)
         else:
             return self._dirName
-        
+
     def _setDirName(self, dirName):
         self._dirName = dirName
-        
+
     dirName = property(_getDirName, _setDirName)
-    
+
     def _getJ2P2JDirName(self):
         if (self._j2p2jDirName == ""):
             return os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
         else:
             return self._j2p2jDirName
-        
+
     def _setJ2P2JDirName(self, dirName):
         self._j2p2jDirName = dirName
 
     j2p2jDirName = property(_getJ2P2JDirName, _setJ2P2JDirName)
-    
-    
+
+
     def _getClientMethods(self):
-        if len(self._clientMethods) > 0:
+        if self._clientMethods:
             return self._clientMethods
         cm = dir(self.clientClass)
         _clientMethods = []
@@ -103,11 +108,11 @@ class Application:
 
     def _setClientMethods(self, cm):
         self._clientMethods = cm
-    
+
     clientMethods = property(_getClientMethods, _setClientMethods)
-    
+
     ## Client Methods ##
-    def createClient(self, clientId=None): 
+    def createClient(self, clientId=None):
         c = self.clientClass()
         c.id = clientId
         c.application = self
@@ -117,11 +122,11 @@ class Application:
     def run(self):
         self.setupHandlers()
         self.startServer()
-        
+
     def startServer(self):
         tornado.options.define("port", default=self.port, help="run on the given port", type=int)
         tornadoApp = tornado.web.Application(self.tornadoHandlers)
-        
+
         #tornado.options.parse_command_line()
         tornadoApp.listen(tornado.options.options.port)
         iolooper = tornado.ioloop.IOLoop.instance()
@@ -129,7 +134,7 @@ class Application:
         webbrowser.open("http://localhost:8888")
         iolooper.start()
 
-    
+
     def setupHandlers(self):
         ## todo -- take from ApplicationClass...
         j2p2jDirName = self.j2p2jDirName
@@ -141,8 +146,8 @@ class Application:
         ]
         self.tornadoHandlers = tornadoHandlers
         return tornadoHandlers
-    
-    
+
+
     def runOld(self):
         '''
         run the Javascript to Python processor
@@ -154,18 +159,17 @@ class Application:
 
         with open(relativeStaticFile) as f:
             allLines = f.read()
-        
+
         with open(relativeBlankFile) as f:
             templateFile = f.read()
-            
+
         outputtedFileCode = templateFile + allLines + "\n<!-- end User Code -->\n</body></html>"
 
         with open(relativeIndexFile, 'w') as f:
             f.write(outputtedFileCode)
-        
+
 ####
 class Client:
-
     class_events = []
 
     def __init__(self):
@@ -173,6 +177,8 @@ class Client:
         self.newMessage = False
         self.millisecondsToWait = 1
         self.events = copy.deepcopy(self.class_events)
+        self.id = None
+        self.application = None
 
     def register(self):
         return {
@@ -189,8 +195,8 @@ class Client:
         self.newMessage = False
         return self.message
 
-    def get_response(self, *json):
-        self.message = json
+    def get_response(self, *jsonReceived):
+        self.message = jsonReceived
         self.newMessage = True
         return {}
 
@@ -221,7 +227,7 @@ class Client:
             readReply = None
 
         response = bound_command()
-        if(type(response) is tornado.concurrent.Future):
+        if (isinstance(response, tornado.concurrent.Future)):
             res = yield response
             send_routine(res)
         else:
@@ -240,26 +246,34 @@ class IndexHandler(tornado.web.RequestHandler):
         if (options is not None and 'htmlStart' in options):
             self.htmlStart = options['htmlStart']
         else:
-            self.htmlStart = 'index.html'  
+            self.htmlStart = 'index.html'
+
         if (options is not None and 'j2p2j' in options):
             self.j2p2j = options['j2p2j']
-        
+
     @tornado.web.asynchronous
     def get(self, **kwargs):
         #self.write("This is your response")
         #if "Id" in kwargs.keys():
         #    print("Your client id is: %s" % (kwargs["Id"],))
-        self.render(self.htmlStart, j2p2jHead=self.j2p2j.j2p2jHead)
+        self.render(self.htmlStart,
+                    j2p2jHead=self.j2p2j.j2p2jHead)
         #self.finish()
 
 
 class MyWebSocketHandler(tornado.websocket.WebSocketHandler):
+    def __init__(self, application, request, **kwargs):
+        super().__init__(application, request, **kwargs)
+        self.id = None
+        self.client = None
+
     def initialize(self, options=None):
         self.options = options
+
         if (options is not None and 'j2p2j' in options):
             self.j2p2j = options['j2p2j']
             self._check_origin = self.j2p2j.checkOrigin
-               
+
     def open(self, *args):
         self.id = self.get_argument("clientId")
         self.stream.set_nodelay(True)
@@ -267,7 +281,7 @@ class MyWebSocketHandler(tornado.websocket.WebSocketHandler):
         c = self.j2p2j.createClient(self.id)
         self.client = c
         self.j2p2j.clients[self.id] = c
- 
+
     def on_message(self, message):
         if "send_message" not in dir(self.client):
             self.client.send_message = self.send_message
@@ -283,7 +297,7 @@ class MyWebSocketHandler(tornado.websocket.WebSocketHandler):
             response = self.client.process_command(self.send_message, command, element)
             if not isinstance(response, tornado.concurrent.Future):
                 responseJson = json.dumps(response)
-                fut = self.send_message(response)
+                unused_future = self.send_message(response)
             return
 
         #here we can handle the message for calback, mostly handled alread here
@@ -293,26 +307,27 @@ class MyWebSocketHandler(tornado.websocket.WebSocketHandler):
         else:
             messageId = 0
         responseBundle = {'messageId': messageId}
-        
+
         method = None
         if ('method' in messageObj):
             method = messageObj['method']
             if method not in self.j2p2j.clientMethods:
                 method = None
-        
+
         if method is None:
             responseBundle['error'] = 'Unknown method.' # TODO: send error
             if ('method' in messageObj):
-                responseBundle['error'] += ': ' + messageObj['method'];
-        else:        
+                responseBundle['error'] += ': ' + messageObj['method']
+        else:
             args = None
             if ('args' in messageObj):
                 args = messageObj['args']
+
             kwargs = None
             if ('kwargs' in messageObj):
                 kwargs = messageObj['kwargs']
             boundMethod = getattr(self.client, method)
-            
+
             try:
                 if args is not None and kwargs is not None:
                     response = boundMethod(*args, **kwargs)
@@ -322,7 +337,7 @@ class MyWebSocketHandler(tornado.websocket.WebSocketHandler):
                     response = boundMethod(**kwargs)
                 else:
                     response = boundMethod()
-                    
+
                 ## methods can return their own callbacks...
                 if isinstance(response, dict) and 'callback' in response:
                     responseBundle['callback'] = response['callback']
@@ -333,16 +348,17 @@ class MyWebSocketHandler(tornado.websocket.WebSocketHandler):
 
         responseJson = json.dumps(responseBundle)
         if self.j2p2j.debug:
-            print("Client %s received a message: %r, so I sent a reply: %r" % (self.id, message, responseJson))
+            print("Client %s received a message: %r, so I sent a reply: %r" %
+                    (self.id, message, responseJson))
         self.write_message(responseJson)
- 
+
     def on_close(self):
         self.client.application = None
         if self.id in self.j2p2j.clients:
             del self.j2p2j.clients[self.id]
         del self.client
         del self.j2p2j
-        
+
     def check_origin(self, origin):
         if callable(self._check_origin):
             return self._check_origin(origin)
@@ -354,11 +370,10 @@ class MyWebSocketHandler(tornado.websocket.WebSocketHandler):
         print("Sending: " + str(message))
         self.write_message(responseJson)
 
-    
-## from Mike H  -- http://stackoverflow.com/questions/14385048/is-there-a-better-way-to-handle-index-html-with-tornado
+
 class IndexAwareStaticFileHandler(tornado.web.StaticFileHandler):
     def parse_url_path(self, url_path):
         if not url_path or url_path.endswith('/'):
             url_path += 'index.html'
 
-        return super(IndexAwareStaticFileHandler, self).parse_url_path(url_path)
+        return super().parse_url_path(url_path)

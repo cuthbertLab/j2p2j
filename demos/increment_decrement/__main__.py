@@ -4,9 +4,6 @@ except ImportError:
     import sys, os
     sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..', '..'))
     import j2p2j
-    
-class MyApp(j2p2j.Application):
-    pass
 
 class MyClient(j2p2j.Client):
 
@@ -14,9 +11,6 @@ class MyClient(j2p2j.Client):
         {"element":"#increment", "event": "click", "method": "increment"},
         {"element":"#decrement", "event": "click", "method": "decrement"}
     ]
-
-    def __init__(self):
-        super(MyClient, self).__init__()
 
     def read(self):
         send = {"method": "READ"}
@@ -52,5 +46,5 @@ class MyClient(j2p2j.Client):
 
 
 if __name__ == '__main__':
-    a = MyApp('appFiles/index.html', MyClient)
+    a = j2p2j.Application('appFiles/index.html', MyClient)
     a.run()

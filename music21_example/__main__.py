@@ -1,15 +1,12 @@
-from j2p2j import Client, Application
+import j2p2j
 from tornado import gen
 from music21 import *
-    
-class MyApp(Application):
-    pass
 
-class MyClient(Client):
+class MyClient(j2p2j.Client):
     def __init__(self):
         self.events2Register = [
-            {"element":"#key_up", "event": "click","method":"key_up"},
-            {"element":"#key_down", "event": "click","method":"key_down"}
+            {"element": "#key_up", "event": "click", "method":"key_up"},
+            {"element": "#key_down", "event": "click", "method":"key_down"}
         ]
 
     def key_up(self):
@@ -36,5 +33,5 @@ class MyClient(Client):
             self.DOM.update("input:nth-child("+str(idx+1)+")", "attributes", {"value":str(val).replace("-","b")})
 
 if __name__ == '__main__':
-    server = MyApp('templates/index.html', MyClient)
+    server = j2p2j.Application('templates/index.html', j2p2j.Client)
     server.run()

@@ -4,15 +4,10 @@ except ImportError:
     import sys, os
     sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..', '..'))
     import j2p2j
-    from tornado import gen
-    import tornado.ioloop
-    
-class MyApp(j2p2j.Application):
-    pass
+
+from tornado import gen
 
 class MyClient(j2p2j.Client):
-    def __init__(self):
-        super(MyClient, self).__init__()
 
     @gen.coroutine
     def increment(self):
@@ -24,7 +19,7 @@ class MyClient(j2p2j.Client):
         after = {"method": "UPDATE"}
         after["location"] = "#toEdit"
         after["toChange"] = "html"
-        after["edit"] = int(m) + 1
+        after["edit"] = int(m[0]) + 1
         self.send_message(after)
         return {}
 
@@ -32,11 +27,14 @@ class MyClient(j2p2j.Client):
         registerEvents = {
             "method":"REGISTER",
             "events":[
-                {"element":"#increment", "event": "click","method":"increment"}
+                { "element": "#increment",
+                  "event": "click",
+                  "method": "increment",
+                },
             ]
         }
         return registerEvents
 
 if __name__ == '__main__':
-    a = MyApp('appFiles/index.html', MyClient)
+    a = j2p2j.Application('appFiles/index.html', MyClient)
     a.run()

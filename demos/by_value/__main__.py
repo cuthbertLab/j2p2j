@@ -4,18 +4,15 @@ except ImportError:
     import sys, os
     sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..', '..'))
     import j2p2j
-    
-class MyApp(j2p2j.Application):
-    pass
+
 
 class MyClient(j2p2j.Client):
-
     class_events = [
-        {"element":"#incrementButtons button", "event": "click", "method": "increment"},
+        { "element": "#incrementButtons button",
+          "event": "click",
+          "method": "increment",
+         },
     ]
-
-    def __init__(self):
-        super(MyClient, self).__init__()
 
     def read(self):
         send = {"method": "READ"}
@@ -35,6 +32,7 @@ class MyClient(j2p2j.Client):
         return self.read()
 
     def increment(self, to_increment, element):
+        print('increment called')
         original_value = int(to_increment)
         if element == "#one":
             return original_value + 1
@@ -46,9 +44,6 @@ class MyClient(j2p2j.Client):
     def increment_update(self, val):
         return self.update(val)
 
-
-
-
 if __name__ == '__main__':
-    a = MyApp('appFiles/index.html', MyClient)
+    a = j2p2j.Application('appFiles/index.html', MyClient)
     a.run()

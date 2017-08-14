@@ -4,24 +4,27 @@ except ImportError:
     import sys, os
     sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..', '..'))
     import j2p2j
-    from tornado import gen
-    
-class MyApp(j2p2j.Application):
-    pass
+
+from tornado import gen
 
 class MyClient(j2p2j.Client):
-    def __init__(self):
-        super(MyClient, self).__init__()
-        self.counter = 0
-        self.boxes = []
-
+        
     def register(self):
         registerEvents = {
             "method":"REGISTER",
             "events":[
-                {"element":"#add_new_box", "event": "click","method":"addBox"},
-                {"element":"#delete_last_box", "event": "click","method":"delete_last_box"},
-                {"element":"#add_inputs", "event": "click","method":"addInputs"}
+                { "element": "#add_new_box",
+                  "event": "click",
+                  "method": "addBox",
+                },
+                { "element": "#delete_last_box",
+                  "event": "click",
+                  "method": "delete_last_box",
+                },
+                { "element": "#add_inputs",
+                  "event": "click",
+                  "method": "addInputs",
+                },
             ]
         }
         return registerEvents
@@ -34,12 +37,15 @@ class MyClient(j2p2j.Client):
         send["toGet"] = "attribute"
         send["get"] = "value"
         result = yield self.get(send)
+
         addition = sum([int(x) for x in list(result)])
+
         send = {"method": "UPDATE"}
         send["location"] = "#total"
         send["toChange"] = "html"
         send["edit"] = addition
         print("Updating input")
+
         return send
 
     def addBox(self):
@@ -47,7 +53,11 @@ class MyClient(j2p2j.Client):
         send = {"method": "CREATE"}
         send["type"] = "input"
         send["location"] = "#boxes"
-        send["attributes"] = {"type":"number","value":"0", "class":"inputs"}
+        send["attributes"] = {
+            "type": "number",
+            "value": "0",
+            "class": "inputs",
+        }
         return send
 
     def delete_last_box(self):
@@ -56,5 +66,5 @@ class MyClient(j2p2j.Client):
         return send
 
 if __name__ == '__main__':
-    a = MyApp('appFiles/index.html', MyClient)
+    a = j2p2j.Application('appFiles/index.html', MyClient)
     a.run()

@@ -9,7 +9,9 @@
 <script>
 require(['jquery', 'j2p2j'], function() {
    j2p2j.connect();
-   setInterval(() => {j2p2j.sendNew("random")}, 100)
+   setInterval( () => {
+       j2p2j.sendNew("random");
+   }, 100)
 });
 </script>
 <input type="number" id="toIncrement" value="0">
