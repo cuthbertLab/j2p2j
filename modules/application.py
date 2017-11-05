@@ -1,14 +1,17 @@
 import inspect
+import logging
 import os
 import sys
 import webbrowser
 
+import tornado.httpserver
 import tornado.ioloop
 import tornado.options
 import tornado.web
 
 from . import client
 from . import tornadoHandlers
+from . import websocketHandler
 
 class Application:
     defaultJ2p2jHead = '''
@@ -30,6 +33,7 @@ class Application:
         self.htmlStart = htmlStart
 
         self.port = 8888
+        self.sslPort = 8443
         self.staticName = 'static'
         self._dirName = ''
         self._j2p2jDirName = ''
@@ -125,14 +129,32 @@ class Application:
     def startServer(self):
         tornado.options.define("port", default=self.port, help="run on the given port", type=int)
         tornadoApp = tornado.web.Application(self.tornadoHandlers)
+        sslServer = self.makeSSLServer(tornadoApp)
+        sslServer.listen(self.sslPort)
+        logging.info('starting tornado HTTPS server on port ' + str(self.sslPort))
+
 
         #tornado.options.parse_command_line()
         tornadoApp.listen(tornado.options.options.port)
         iolooper = tornado.ioloop.IOLoop.instance()
         print("Tornado Started")
-        webbrowser.open("http://localhost:" + str(tornado.options.options.port))
+        webbrowser.open("https://localhost:" + str(self.sslPort))
         iolooper.start()
 
+    def makeSSLServer(self, normalApp):
+        sslcert = '/Users/cuthbert/Documents/music21/Amazon Web Services/cert.pem'
+        sslkey = '/Users/cuthbert/Documents/music21/Amazon Web Services/key.pem'
+        if sslcert is None or sslkey is None:
+            raise Exception('Cannot start server without an sslcert or sslkey; '
+                                + 'set these in .artusi_password')
+        # generate with:
+        # openssl req -newkey rsa:2048 -new -nodes -x509 -days 3650 -keyout key.pem -out cert.pem
+        http_server = tornado.httpserver.HTTPServer(normalApp,
+                        ssl_options={
+                                     'certfile': sslcert,
+                                     'keyfile': sslkey,
+                                     })
+        return http_server
 
     def setupHandlers(self):
         ## todo -- take from ApplicationClass...
@@ -149,7 +171,7 @@ class Application:
              }
             ),
             (r'/ws',
-             tornadoHandlers.MyWebSocketHandler,
+             websocketHandler.J2P2JWebSocketHandler,
              {'options': {
                           'j2p2j': self
                           }

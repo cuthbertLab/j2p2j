@@ -5,6 +5,14 @@ import tornado.concurrent
 from tornado import gen
 
 class Client:
+    '''
+    EVENTS:
+
+    Either the class can define "class_events" which all members
+    of the class will inherit or they can be returned from the
+    "register" function.
+    '''
+
     class_events = []
 
     def __init__(self):

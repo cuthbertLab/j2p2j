@@ -19,6 +19,7 @@ class MyClient(j2p2j.Client):
         return registerEvents
 
     def addBox(self):
+        print("adding box")
         send = {"method": "CREATE"}
         send["type"] = "input"
         send["location"] = "#boxes"

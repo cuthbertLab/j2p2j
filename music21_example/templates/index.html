@@ -3,37 +3,45 @@
 <head>
     <meta charset="utf-8">
     <title>Simple Application</title>
+    <script src="/static/vexflow-min.js"></script>
     {% raw j2p2jHead %}
-    <script src="https://unpkg.com/vexflow/releases/vexflow-min.js"></script>
 </head>
 <body>
     <input value="C4" type="text" /><input value="A4" type="text" /><input value="B4" type="text" /><input value="C4" type="text" /><br>
     <button id='key_up'>Key Up</button>    <button id='key_down'>Key Down</button>
     <div id="boo"></div>
     <script>
-        var vf = new Vex.Flow.Factory({renderer: {selector: 'boo'}});
-        var score = vf.EasyScore();
-        var system = vf.System();
-        system.addStave({
-            voices: [score.voice(score.notes('C4/q, A4, B4, C4'))]
-        }).addClef('treble').addTimeSignature('4/4');
-        vf.draw();
-        document.querySelectorAll("input").forEach(el => {
-            ["change", "input"].forEach( event => {
-                el.addEventListener(event, () => {
-                    document.getElementById("boo").innerHTML = "";
-                    let values = [...document.querySelectorAll("input")].map( input => input.value)
-                    values[0] += "/q"
-                    var vf = new Vex.Flow.Factory({renderer: {selector: 'boo'}});
-                    var score = vf.EasyScore();
-                    var system = vf.System();
-                    system.addStave({
-                        voices: [score.voice(score.notes(values.join(", ")))]
-                    }).addClef('treble').addTimeSignature('4/4');
-                    vf.draw();
+    var vf = new Vex.Flow.Factory({renderer: {selector: 'boo'}});
+var score = vf.EasyScore();
+var system = vf.System();
+system
+    .addStave({
+        voices: [score.voice(score.notes('C4/q, A4, B4, C4'))],
+    })
+    .addClef('treble')
+    .addTimeSignature('4/4');
+vf.draw();
+document.querySelectorAll('input').forEach(el => {
+    ['change', 'input'].forEach(event => {
+        el.addEventListener(event, () => {
+            document.getElementById('boo').innerHTML = '';
+            let values = [...document.querySelectorAll('input')].map(
+                input => input.value,
+            );
+            values[0] += '/q';
+            var vf = new Vex.Flow.Factory({renderer: {selector: 'boo'}});
+            var score = vf.EasyScore();
+            var system = vf.System();
+            system
+                .addStave({
+                    voices: [score.voice(score.notes(values.join(', ')))],
                 })
-            })
-        })
-    </script>
+                .addClef('treble')
+                .addTimeSignature('4/4');
+            vf.draw();
+        });
+    });
+});
+</script>
 </body>
 </html>

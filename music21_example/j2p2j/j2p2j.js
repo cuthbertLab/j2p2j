@@ -1,4 +1,4 @@
-define([], () => {
+/*define([], () => {
     j2p2j = { websocket: null }
     //j2p2j.port = (window.location.port != "") ? ":" + window.location.port : "";
     j2p2j.websocketHost = 'ws://' + window.location.host; // + j2p2j.port;
@@ -6,9 +6,7 @@ define([], () => {
     j2p2j.messageIdCallbacks = {};
     j2p2j.messageIdErrorCallbacks = {};
 
-    j2p2j.onopen = function () { 
-        j2p2j.sendNew("register", null) 
-    };
+    j2p2j.onopen = function () { j2p2j.sendNew("register", null) };
     j2p2j.onclose = function () { };
     j2p2j.onmessage = function (evt) {
         var data = JSON.parse(evt.data);
@@ -104,15 +102,15 @@ define([], () => {
     /**
      * Send takes a very flexible list of up to three arguments which can be
      * objects, strings, functions or arrays.  A typical usage would be
-     * 
+     *
      * j2p2j.send('methodName', [arg0, arg1], {keywordArg: value}, {callback: callbackFunction, error: errorFunction})
-     * 
+     *
      * but might be
-     * 
+     *
      * j2p2j.send({method: 'methodName', callback: function (d) {}, arg: 5})
-     * 
+     *
      * etc.
-     */
+
     j2p2j.send = function (arg0, arg1, arg2, arg3) {
         var method;
         var singleArg;
@@ -229,15 +227,21 @@ define([], () => {
 
 
     return j2p2j;
-});
+});*/
 
-/*
+class j2p2j extends WebSocket {
     constructor() {
         // this.websocket = null;
         // this.websocketHost = 'ws://' + window.location.host; // + j2p2j.port;
         // this.websocketUri = this.websocketHost + '/ws';
         const id = 12345678;
-        super('ws://' + window.location.host + '/ws' + "?clientId=" + id.toString())
+        super(
+            'ws://' +
+                window.location.host +
+                '/ws' +
+                '?clientId=' +
+                id.toString(),
+        );
         this.messageIdCallbacks = {};
         this.messageIdErrorCallbacks = {};
         this.addEventListener('open', this.onopen);
@@ -245,27 +249,27 @@ define([], () => {
         this.addEventListener('message', this.onmessage);
     }
     onopen() {
-        this.sendNew("register", null)
-    };
-    onclose() { };
+        this.sendNew('register', null);
+    }
+    onclose() {}
     onmessage(evt) {
         console.log(evt);
         var data = JSON.parse(evt.data);
-        console.log("Received: ", data);
+        console.log('Received: ', data);
         switch (data.method) {
-            case "REGISTER":
+            case 'REGISTER':
                 this.register(data.events);
                 return;
-            case "CREATE":
+            case 'CREATE':
                 this.create(data.type, data.attributes, data.location);
                 return;
-            case "READ":
+            case 'READ':
                 this.read(data.location, data.toGet, data.get);
                 return;
-            case "UPDATE":
+            case 'UPDATE':
                 this.update(data.location, data.toChange, data.edit);
                 return;
-            case "DELETE":
+            case 'DELETE':
                 this.delete(data.location);
                 return;
         }
@@ -285,7 +289,7 @@ define([], () => {
             if (errorCallback !== undefined) {
                 errorCallback(errorResponse);
             } else {
-                console.error("Server error:", errorResponse);
+                console.error('Server error:', errorResponse);
             }
         } else {
             if (callback !== undefined) {
@@ -296,7 +300,7 @@ define([], () => {
         }
 
         //can add the GET, PUT, POST DELETE idea here once we see what the request is
-    };
+    }
     send(arg0, arg1, arg2, arg3) {
         var method;
         var singleArg;
@@ -309,11 +313,22 @@ define([], () => {
             var a = callArgs[i];
             if (typeof a == 'string' && method === undefined) {
                 method = a;
-            } else if (typeof a == 'object' && a !== null && a.constructor !== Array &&
-                (a.callback === undefined && a.error === undefined &&
-                    a.args === undefined && a.arg === undefined && a.kwargs === undefined)) {
+            } else if (
+                typeof a == 'object' &&
+                a !== null &&
+                a.constructor !== Array &&
+                (a.callback === undefined &&
+                    a.error === undefined &&
+                    a.args === undefined &&
+                    a.arg === undefined &&
+                    a.kwargs === undefined)
+            ) {
                 kwargs = a;
-            } else if (a !== undefined && a !== null && a.constructor === Array) {
+            } else if (
+                a !== undefined &&
+                a !== null &&
+                a.constructor === Array
+            ) {
                 args = a;
             } else if (typeof a == 'function' && callback === undefined) {
                 callback = a;
@@ -345,13 +360,13 @@ define([], () => {
         }
         //console.log(method, callback, args, kwargs, error);
         this.sendRaw(method, callback, args, kwargs, error);
-    };
+    }
     sendRaw(method, callback, args, kwargs, error) {
         var msgId = this.makeMessageId();
         this.messageIdCallbacks[msgId] = callback;
         this.messageIdErrorCallbacks[msgId] = error;
 
-        var msg = { messageId: msgId, method: method };
+        var msg = {messageId: msgId, method: method};
         if (args !== undefined) {
             msg.args = args;
         }
@@ -359,23 +374,33 @@ define([], () => {
             msg.kwargs = kwargs;
         }
         var jsonMsg = JSON.stringify(msg);
-        console.log("Sending Raw: ", jsonMsg);
+        console.log('Sending Raw: ', jsonMsg);
         super.send(jsonMsg);
     }
     sendNew(method, eventMapping, elementThatEventFiredOn) {
-        var msg = { newMethod: method, eventMapping: eventMapping }
+        var msg = {newMethod: method, eventMapping: eventMapping};
         var jsonMsg = JSON.stringify(msg);
-        console.log("Sending New: ", jsonMsg);
+        console.log('Sending New: ', jsonMsg);
         super.send(jsonMsg);
     }
     makeMessageId() {
-        return ((Date.now()) * 1000) + Math.floor(Math.random() * 1000);
-    };
+        return Date.now() * 1000 + Math.floor(Math.random() * 1000);
+    }
     register(evts) {
-        evts.forEach((eventMapping) => {
-            const matchingElements = document.querySelector(eventMapping.element)
-            matchingElements.addEventListener(eventMapping.event,
-                (elementThatEventFiredOn) => { this.sendNew(eventMapping.method, eventMapping, elementThatEventFiredOn) });
+        evts.forEach(eventMapping => {
+            const matchingElements = document.querySelector(
+                eventMapping.element,
+            );
+            matchingElements.addEventListener(
+                eventMapping.event,
+                elementThatEventFiredOn => {
+                    this.sendNew(
+                        eventMapping.method,
+                        eventMapping,
+                        elementThatEventFiredOn,
+                    );
+                },
+            );
         });
     }
     create(tag, attributes, location) {
@@ -386,45 +411,52 @@ define([], () => {
         document.querySelector(location).appendChild(newElement);
     }
     read(location, type, attr) {
-        console.log("GET method used");
-        console.log("reading", document.querySelectorAll(location))
-        var elements = [...document.querySelectorAll(location)]
+        console.log('GET method used');
+        console.log('reading', document.querySelectorAll(location));
+        var elements = [...document.querySelectorAll(location)];
         let response = [];
-        if (type === "html") {
-            console.log("Telling python to handle response")
+        if (type === 'html') {
+            console.log('Telling python to handle response');
             if (elements.length > 1) {
-                response = elements.map(element => element.innerHTML)
+                response = elements.map(element => element.innerHTML);
             } else {
-                response = [elements[0].innerHTML]
+                response = [elements[0].innerHTML];
             }
-        } else if (type === "attribute") {
-            console.log("Getting Attributes");
+        } else if (type === 'attribute') {
+            console.log('Getting Attributes');
             console.log(attr);
             console.log(elements[0][attr]);
             if (elements.length > 1) {
-                response = elements.map(element => element[attr])
+                response = elements.map(element => element[attr]);
             } else {
-                response = [elements[0][attr]]
+                response = [elements[0][attr]];
             }
         }
-        this.send("get_response", response);
+        this.send('get_response', response);
     }
     update(location, toChange, changes) {
-        const element = document.querySelector(location)
-        if (toChange === "html") {
-            element.innerHTML = changes
-        } else if (toChange === "attributes") {
+        const element = document.querySelector(location);
+        if (toChange === 'html') {
+            element.innerHTML = changes;
+        } else if (toChange === 'attributes') {
             for (let attribute in changes) {
-                if (!element.getAttribute(attribute) || changes[attribute] === "") {
+                if (
+                    !element.getAttribute(attribute) ||
+                    changes[attribute] === ''
+                ) {
                     element.setAttribute(attribute, changes[attribute]);
                 } else {
                     element[attribute] = changes[attribute];
                 }
             }
         }
+        element.dispatchEvent(new Event('change'));
     }
     delete(location) {
-        const element = document.querySelector(location)
+        const element = document.querySelector(location);
         element.parentNode.removeChild(element);
     }
-}*/
+}
+window.onload = () => {
+    j2p2jInstance = new j2p2j();
+};

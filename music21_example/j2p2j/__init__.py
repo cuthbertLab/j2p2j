@@ -15,6 +15,8 @@ import tornado.queues
 
 from tornado import gen
 
+print("Running new version")
+
 class Application:
     defaultJ2p2jHead = '''
     <meta http-equiv="X-UA-Compatible" content="chrome=1">
@@ -173,7 +175,7 @@ class Client:
         self.events2Register = []
 
     def register(self):
-        print("Sending register message")
+        print("Running register")
         self.DOM.send({
             "method": "REGISTER",
             "events": self.events2Register
