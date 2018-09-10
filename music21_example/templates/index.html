@@ -4,44 +4,49 @@
     <meta charset="utf-8">
     <title>Simple Application</title>
     <script src="/static/vexflow-min.js"></script>
+    {% whitespace all %}
     {% raw j2p2jHead %}
 </head>
 <body>
-    <input value="C4" type="text" /><input value="A4" type="text" /><input value="B4" type="text" /><input value="C4" type="text" /><br>
+    <input value="G4" type="text" />
+    <input value="A4" type="text" />
+    <input value="B4" type="text" />
+    <input value="C4" type="text" />
+    <input value="G4" type="text" />
+    <br>
     <button id='key_up'>Key Up</button>    <button id='key_down'>Key Down</button>
     <div id="boo"></div>
     <script>
-    var vf = new Vex.Flow.Factory({renderer: {selector: 'boo'}});
-var score = vf.EasyScore();
-var system = vf.System();
-system
-    .addStave({
-        voices: [score.voice(score.notes('C4/q, A4, B4, C4'))],
-    })
-    .addClef('treble')
-    .addTimeSignature('4/4');
-vf.draw();
+const noteLengths = ['/q', '/8', '/8', '/q', '/q'];
+
+function drawScore() {
+    const notes = [...document.querySelectorAll('input')].map(
+        input => input.value,
+    );
+    for (let i = 0; i < notes.length; i++) {
+        notes[i] = notes[i] + noteLengths[i];
+    }
+    const notesStr = notes.join(', ');
+    const vf = new Vex.Flow.Factory({renderer: {selector: 'boo'}});
+    const score = vf.EasyScore();
+    const system = vf.System();
+    system
+        .addStave({
+            voices: [score.voice(score.notes(notesStr))],
+        })
+        .addClef('treble')
+        .addTimeSignature('4/4');
+    vf.draw();
+}
 document.querySelectorAll('input').forEach(el => {
     ['change', 'input'].forEach(event => {
         el.addEventListener(event, () => {
             document.getElementById('boo').innerHTML = '';
-            let values = [...document.querySelectorAll('input')].map(
-                input => input.value,
-            );
-            values[0] += '/q';
-            var vf = new Vex.Flow.Factory({renderer: {selector: 'boo'}});
-            var score = vf.EasyScore();
-            var system = vf.System();
-            system
-                .addStave({
-                    voices: [score.voice(score.notes(values.join(', ')))],
-                })
-                .addClef('treble')
-                .addTimeSignature('4/4');
-            vf.draw();
+            drawScore();
         });
     });
 });
+drawScore();
 </script>
 </body>
 </html>
