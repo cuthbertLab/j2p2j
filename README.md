@@ -27,4 +27,7 @@ Tada!  See the demos directory for two demos...
 
 Built off of Tornado web server
 
+Authors
+=======
 
+Jimmy Gomez and Michael Scott Cuthbert
